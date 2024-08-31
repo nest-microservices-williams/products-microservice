@@ -30,16 +30,19 @@ export class ProductsService {
 
     const where: Prisma.ProductWhereInput = { available: true };
 
-    const totalPromise = this.prismaService.product.count({ where });
-
-    const dataPromise = this.prismaService.product.findMany({
+    const dataQuery = this.prismaService.product.findMany({
       where,
       take: limit,
       skip: (page - 1) * limit,
       select: this.select,
     });
 
-    const [total, data] = await Promise.all([totalPromise, dataPromise]);
+    const totalQuery = this.prismaService.product.count({ where });
+
+    const [data, total] = await this.prismaService.$transaction([
+      dataQuery,
+      totalQuery,
+    ]);
 
     return buildPagination(data, total, page, limit);
   }
