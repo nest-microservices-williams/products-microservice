@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -7,22 +8,35 @@ import { buildPagination } from 'src/helpers/pagination.helper';
 
 @Injectable()
 export class ProductsService {
+  private readonly select: Prisma.ProductSelect = {
+    id: true,
+    name: true,
+    price: true,
+    createdAt: true,
+    updatedAt: true,
+  };
+
   constructor(private readonly prismaService: PrismaService) {}
 
   create(createProductDto: CreateProductDto) {
     return this.prismaService.product.create({
       data: createProductDto,
+      select: this.select,
     });
   }
 
   async findAll(paginationDto: PaginationDto) {
     const { limit, page } = paginationDto;
 
-    const totalPromise = this.prismaService.product.count();
+    const where: Prisma.ProductWhereInput = { available: true };
+
+    const totalPromise = this.prismaService.product.count({ where });
 
     const dataPromise = this.prismaService.product.findMany({
+      where,
       take: limit,
       skip: (page - 1) * limit,
+      select: this.select,
     });
 
     const [total, data] = await Promise.all([totalPromise, dataPromise]);
@@ -32,7 +46,8 @@ export class ProductsService {
 
   async findOne(id: number) {
     const product = await this.prismaService.product.findUnique({
-      where: { id },
+      where: { id, available: true },
+      select: this.select,
     });
 
     if (!product) {
@@ -48,10 +63,16 @@ export class ProductsService {
     return this.prismaService.product.update({
       where: { id },
       data: updateProductDto,
+      select: this.select,
     });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: number) {
+    await this.findOne(id);
+
+    return this.prismaService.product.update({
+      where: { id },
+      data: { available: false },
+    });
   }
 }
