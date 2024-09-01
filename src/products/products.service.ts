@@ -6,6 +6,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { buildPagination } from 'src/helpers/pagination.helper';
+import { CustomRpcException } from 'src/common/exceptions/rpc.exception';
 
 @Injectable()
 export class ProductsService {
@@ -55,8 +56,9 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new RpcException({
-        status: HttpStatus.NOT_FOUND,
+      throw new CustomRpcException({
+        statusCode: HttpStatus.NOT_FOUND,
+        error: 'Not Found',
         message: `Product with id: ${id} not found`,
       });
     }
