@@ -1,5 +1,4 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
 import type { Prisma } from '@prisma/client';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -91,7 +90,7 @@ export class ProductsService {
     ids = [...new Set(ids)]; // Remove duplicates
 
     const products = await this.prismaService.product.findMany({
-      where: { id: { in: ids }, available: true },
+      where: { id: { in: ids } },
     });
 
     if (products.length !== ids.length) {
