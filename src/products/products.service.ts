@@ -86,4 +86,26 @@ export class ProductsService {
       data: { available: false },
     });
   }
+
+  async validateProducts(ids: number[]) {
+    ids = [...new Set(ids)]; // Remove duplicates
+
+    const products = await this.prismaService.product.findMany({
+      where: { id: { in: ids }, available: true },
+    });
+
+    if (products.length !== ids.length) {
+      const notFoundIds = ids.filter(
+        (id) => !products.some((product) => product.id === id),
+      );
+
+      throw new CustomRpcException({
+        statusCode: HttpStatus.NOT_FOUND,
+        error: 'Not Found',
+        message: `Products with ids: ${notFoundIds.join(', ')} not found`,
+      });
+    }
+
+    return products;
+  }
 }
